@@ -13,30 +13,40 @@ $method_count = count($payment_methods);
 ?>
 
 <?php if ($method_count > 1) { ?>
+
     <?php if (!empty($choose_notice)) { ?>
-        <p><?php echo htmlspecialchars($choose_notice, ENT_QUOTES, 'UTF-8'); ?></p>
+        <p class="mb-3"><?php echo htmlspecialchars($choose_notice, ENT_QUOTES, 'UTF-8'); ?></p>
     <?php } ?>
 
-    <div class="payssion-payment-methods">
+    <!-- Blesta 5.13.x (Bootstrap 4) friendly layout -->
+    <div class="payssion-payment-methods mx-auto" style="max-width: 520px;">
+
         <?php foreach ($payment_methods as $i => $method) { ?>
             <?php
             $label = isset($method['label']) ? $method['label'] : (isset($method['pm_id']) ? $method['pm_id'] : '');
             $fields = isset($method['fields']) ? (array) $method['fields'] : [];
             ?>
 
-            <form action="<?php echo htmlspecialchars($post_to, ENT_QUOTES, 'UTF-8'); ?>" method="post" class="payssion-payment-method-form">
+            <form action="<?php echo htmlspecialchars($post_to, ENT_QUOTES, 'UTF-8'); ?>"
+                  method="post"
+                  class="mb-2">
+
                 <?php foreach ($fields as $name => $value) { ?>
-                    <input type="hidden" name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>" />
+                    <input type="hidden"
+                           name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>"
+                           value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>" />
                 <?php } ?>
 
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
                     <?php echo htmlspecialchars(sprintf(Language::_('Payssion.process.pay_with', true), $label), ENT_QUOTES, 'UTF-8'); ?>
                 </button>
             </form>
         <?php } ?>
+
     </div>
 
 <?php } else { ?>
+
     <?php
     // Single method: auto-submit for a smoother checkout
     $single = !empty($payment_methods) ? $payment_methods[0] : [];
@@ -45,10 +55,14 @@ $method_count = count($payment_methods);
 
     <form action="<?php echo htmlspecialchars($post_to, ENT_QUOTES, 'UTF-8'); ?>" method="post" id="payssion_payment_form">
         <?php foreach ($fields as $name => $value) { ?>
-            <input type="hidden" name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>" />
+            <input type="hidden"
+                   name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>"
+                   value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>" />
         <?php } ?>
 
-        <button type="submit" class="btn btn-primary"><?php echo htmlspecialchars($submit_label, ENT_QUOTES, 'UTF-8'); ?></button>
+        <button type="submit" class="btn btn-primary">
+            <?php echo htmlspecialchars($submit_label, ENT_QUOTES, 'UTF-8'); ?>
+        </button>
     </form>
 
     <script>
@@ -60,4 +74,5 @@ $method_count = count($payment_methods);
         }
     })();
     </script>
+
 <?php } ?>
