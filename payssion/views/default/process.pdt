@@ -1,0 +1,63 @@
+<?php
+// Payment processing form(s)
+// If multiple payment methods are configured, show a separate button for each.
+?>
+
+<?php if (!empty($notice)) { ?>
+    <p><?php echo htmlspecialchars($notice, ENT_QUOTES, 'UTF-8'); ?></p>
+<?php } ?>
+
+<?php
+$payment_methods = isset($payment_methods) ? (array) $payment_methods : [];
+$method_count = count($payment_methods);
+?>
+
+<?php if ($method_count > 1) { ?>
+    <?php if (!empty($choose_notice)) { ?>
+        <p><?php echo htmlspecialchars($choose_notice, ENT_QUOTES, 'UTF-8'); ?></p>
+    <?php } ?>
+
+    <div class="payssion-payment-methods">
+        <?php foreach ($payment_methods as $i => $method) { ?>
+            <?php
+            $label = isset($method['label']) ? $method['label'] : (isset($method['pm_id']) ? $method['pm_id'] : '');
+            $fields = isset($method['fields']) ? (array) $method['fields'] : [];
+            ?>
+
+            <form action="<?php echo htmlspecialchars($post_to, ENT_QUOTES, 'UTF-8'); ?>" method="post" class="payssion-payment-method-form">
+                <?php foreach ($fields as $name => $value) { ?>
+                    <input type="hidden" name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>" />
+                <?php } ?>
+
+                <button type="submit" class="btn btn-primary">
+                    <?php echo htmlspecialchars(sprintf(Language::_('Payssion.process.pay_with', true), $label), ENT_QUOTES, 'UTF-8'); ?>
+                </button>
+            </form>
+        <?php } ?>
+    </div>
+
+<?php } else { ?>
+    <?php
+    // Single method: auto-submit for a smoother checkout
+    $single = !empty($payment_methods) ? $payment_methods[0] : [];
+    $fields = isset($single['fields']) ? (array) $single['fields'] : (isset($fields) ? (array) $fields : []);
+    ?>
+
+    <form action="<?php echo htmlspecialchars($post_to, ENT_QUOTES, 'UTF-8'); ?>" method="post" id="payssion_payment_form">
+        <?php foreach ($fields as $name => $value) { ?>
+            <input type="hidden" name="<?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>" />
+        <?php } ?>
+
+        <button type="submit" class="btn btn-primary"><?php echo htmlspecialchars($submit_label, ENT_QUOTES, 'UTF-8'); ?></button>
+    </form>
+
+    <script>
+    // Auto-submit to Payssion for a smoother checkout (leave the button as a fallback)
+    (function () {
+        var f = document.getElementById('payssion_payment_form');
+        if (f) {
+            f.submit();
+        }
+    })();
+    </script>
+<?php } ?>

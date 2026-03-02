@@ -1,0 +1,29 @@
+{
+  "version": "1.1.1",
+  "name": "Payssion.name",
+  "description": "Payssion.description",
+  "authors": [
+    {
+      "name": "Community",
+      "url": "https://www.payssion.com/"
+    }
+  ],
+  "currencies": [
+    "USD",
+    "EUR",
+    "GBP",
+    "AUD",
+    "CAD",
+    "SGD",
+    "HKD",
+    "JPY",
+    "CNY",
+    "INR",
+    "BDT",
+    "BRL",
+    "MXN",
+    "ZAR"
+  ],
+  "signup_url": "https://www.payssion.com/en/signup.html",
+  "logo": "views/default/images/logo.png"
+}
