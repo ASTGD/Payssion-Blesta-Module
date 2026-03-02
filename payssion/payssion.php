@@ -366,10 +366,29 @@ class Payssion extends NonmerchantGateway
             return (string) $options['invoice_id'];
         }
 
-        // Otherwise use the first invoice id from the invoice_amounts list
+        /**
+         * Blesta passes $invoice_amounts like:
+         * [
+         *   ['id' => 123, 'amount' => '10.00'],
+         *   ['id' => 124, 'amount' => '5.00']
+         * ]
+         * so array_keys() would return [0,1,...] which causes track_id "0".
+         */
         if (is_array($invoice_amounts) && !empty($invoice_amounts)) {
-            $invoice_ids = array_keys($invoice_amounts);
-            return (string) reset($invoice_ids);
+            $first = reset($invoice_amounts);
+
+            if (is_array($first) && isset($first['id']) && $first['id'] !== '') {
+                return (string) $first['id'];
+            }
+
+            // Fallback in case Blesta ever passes associative invoice_id => amount
+            if (!empty($invoice_amounts)) {
+                $keys = array_keys($invoice_amounts);
+                $first_key = reset($keys);
+                if ($first_key !== null && $first_key !== '') {
+                    return (string) $first_key;
+                }
+            }
         }
 
         // Fallback
@@ -381,10 +400,34 @@ class Payssion extends NonmerchantGateway
      */
     private function buildDescription($invoice_amounts, $track_id)
     {
+        // Prefer Blesta's structured invoice list
         if (is_array($invoice_amounts) && !empty($invoice_amounts)) {
-            $invoice_ids = array_keys($invoice_amounts);
-            $label = (count($invoice_ids) > 1 ? 'Invoices' : 'Invoice');
-            return $label . ': ' . implode(',', $invoice_ids);
+            $ids = [];
+
+            foreach ($invoice_amounts as $row) {
+                if (is_array($row) && isset($row['id']) && $row['id'] !== '') {
+                    $ids[] = (string) $row['id'];
+                }
+            }
+
+            // If nothing found, fallback to associative keys style
+            if (empty($ids)) {
+                $keys = array_keys($invoice_amounts);
+                foreach ($keys as $k) {
+                    if ($k !== null && $k !== '') {
+                        $ids[] = (string) $k;
+                    }
+                }
+            }
+
+            $ids = array_values(array_unique(array_filter($ids, function ($v) {
+                return $v !== '' && $v !== null;
+            })));
+
+            if (!empty($ids)) {
+                $label = (count($ids) > 1 ? 'Invoices' : 'Invoice');
+                return $label . ': ' . implode(',', $ids);
+            }
         }
 
         return 'Invoice: ' . $track_id;
