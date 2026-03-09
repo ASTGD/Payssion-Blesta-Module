@@ -19,6 +19,7 @@ This is a **non-merchant** payment gateway for Blesta that redirects clients to 
    - API Key
    - Secret Key
    - Payment Method ID(s) (`pm_id`) - you may enter a comma-separated list (e.g. `alipay_cn, wechatpay_cn`)
+   - Gateway Display Name (optional) - custom name shown to clients; if blank and multiple methods are configured, the gateway name includes those methods automatically
 
 5. Select the currencies you want to accept.
 
