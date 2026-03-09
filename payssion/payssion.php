@@ -49,6 +49,31 @@ class Payssion extends NonmerchantGateway
     }
 
     /**
+     * Returns the gateway display name shown to clients.
+     */
+    public function getName()
+    {
+        $default_name = Language::_('Payssion.name', true);
+
+        $display_name = trim((string) $this->ifSet($this->meta['display_name']));
+        if ($display_name !== '') {
+            return $display_name;
+        }
+
+        $pm_ids = $this->parsePmIds($this->ifSet($this->meta['pm_id']));
+        if (count($pm_ids) <= 1) {
+            return $default_name;
+        }
+
+        $labels = [];
+        foreach ($pm_ids as $pm_id) {
+            $labels[] = $this->formatPmLabel($pm_id);
+        }
+
+        return $default_name . ' (' . implode(', ', $labels) . ')';
+    }
+
+    /**
      * Returns HTML for the gateway settings page
      */
     public function getSettings(array $meta = null)
@@ -98,6 +123,9 @@ class Payssion extends NonmerchantGateway
 
         // Normalize debug to "0"/"1"
         $meta['debug'] = (!empty($meta['debug']) && $meta['debug'] !== '0') ? '1' : '0';
+
+        // Normalize end-user display name
+        $meta['display_name'] = trim((string) $this->ifSet($meta['display_name']));
 
         // Normalize pm_id(s) by trimming whitespace (allow comma-separated list)
         if (isset($meta['pm_id'])) {
