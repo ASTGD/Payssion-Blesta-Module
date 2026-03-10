@@ -55,6 +55,12 @@ class Payssion extends NonmerchantGateway
     {
         $default_name = Language::_('Payssion.name', true);
 
+        // If Blesta has a gateway "given name" configured, prefer it.
+        $base_name = trim((string) parent::getName());
+        if ($base_name !== '' && $base_name !== $default_name) {
+            return $base_name;
+        }
+
         $display_name = trim((string) $this->ifSet($this->meta['display_name']));
         if ($display_name !== '') {
             return $display_name;
