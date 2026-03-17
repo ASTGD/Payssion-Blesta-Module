@@ -53,7 +53,10 @@ class Payssion extends NonmerchantGateway
      */
     public function getName()
     {
-        $default_name = Language::_('Payssion.name', true);
+        $default_name = (string) Language::_('Payssion.name', true);
+        if ($default_name === '' || $default_name === 'Payssion.name') {
+            $default_name = 'Payssion';
+        }
 
         // If Blesta has a gateway "given name" configured, prefer it.
         $base_name = trim((string) parent::getName());
@@ -61,12 +64,12 @@ class Payssion extends NonmerchantGateway
             return $base_name;
         }
 
-        $display_name = trim((string) $this->ifSet($this->meta['display_name']));
+        $display_name = trim((string) $this->ifSet(isset($this->meta['display_name']) ? $this->meta['display_name'] : null));
         if ($display_name !== '') {
             return $display_name;
         }
 
-        $pm_ids = $this->parsePmIds($this->ifSet($this->meta['pm_id']));
+        $pm_ids = $this->parsePmIds($this->ifSet(isset($this->meta['pm_id']) ? $this->meta['pm_id'] : null));
         if (count($pm_ids) <= 1) {
             return $default_name;
         }
@@ -77,6 +80,32 @@ class Payssion extends NonmerchantGateway
         }
 
         return $default_name . ' (' . implode(', ', $labels) . ')';
+    }
+
+    /**
+     * Returns a list of selectable payment methods shown by Blesta checkout/order forms.
+     *
+     * This allows a single gateway instance configured with multiple pm_id values to render
+     * each method (e.g. Bitcoin, Alipay CN) as a separate option before redirecting.
+     */
+    public function getPaymentMethods()
+    {
+        $pm_ids = $this->parsePmIds($this->ifSet(isset($this->meta['pm_id']) ? $this->meta['pm_id'] : null));
+
+        if (empty($pm_ids)) {
+            return [];
+        }
+
+        // Blesta expects each method as an array with 'value' and 'name' keys.
+        $methods = [];
+        foreach ($pm_ids as $pm_id) {
+            $methods[] = [
+                'value' => $pm_id,
+                'name' => $this->formatPmLabel($pm_id)
+            ];
+        }
+
+        return $methods;
     }
 
     /**
@@ -177,6 +206,12 @@ class Payssion extends NonmerchantGateway
         $secret_key = $this->ifSet($this->meta['secret_key']);
         $pm_id_raw = $this->ifSet($this->meta['pm_id']);
         $pm_ids = $this->parsePmIds($pm_id_raw);
+
+        // If the checkout/order flow selected a specific payment method, honor it.
+        $selected_method = $this->extractSelectedPaymentMethod($options);
+        if ($selected_method !== '' && in_array($selected_method, $pm_ids, true)) {
+            $pm_ids = [$selected_method];
+        }
 
         if (empty($api_key) || empty($secret_key) || empty($pm_ids)) {
             $this->Input->setErrors($this->getCommonError('general'));
@@ -363,6 +398,28 @@ class Payssion extends NonmerchantGateway
             'parent_transaction_id' => null,
             'invoices' => $this->ifSet($get['invoices'], [])
         ];
+    }
+
+
+    /**
+     * Attempts to extract the selected payment method from Blesta options payload.
+     */
+    private function extractSelectedPaymentMethod($options)
+    {
+        if (!is_array($options)) {
+            return '';
+        }
+
+        $candidate = $this->ifSet($options['payment_method']);
+        if (is_array($candidate)) {
+            $candidate = $this->ifSet($candidate['value']);
+        }
+
+        if ($candidate === null || $candidate === '') {
+            $candidate = $this->ifSet($options['payment_method_id']);
+        }
+
+        return trim((string) $candidate);
     }
 
     /**
