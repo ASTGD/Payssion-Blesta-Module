@@ -96,9 +96,13 @@ class Payssion extends NonmerchantGateway
             return [];
         }
 
+        // Blesta expects each method as an array with 'value' and 'name' keys.
         $methods = [];
         foreach ($pm_ids as $pm_id) {
-            $methods[$pm_id] = $this->formatPmLabel($pm_id);
+            $methods[] = [
+                'value' => $pm_id,
+                'name' => $this->formatPmLabel($pm_id)
+            ];
         }
 
         return $methods;
@@ -204,14 +208,7 @@ class Payssion extends NonmerchantGateway
         $pm_ids = $this->parsePmIds($pm_id_raw);
 
         // If the checkout/order flow selected a specific payment method, honor it.
-        $selected_method = null;
-        if (is_array($options)) {
-            $selected_method = $this->ifSet($options['payment_method']);
-            if ($selected_method === null || $selected_method === '') {
-                $selected_method = $this->ifSet($options['payment_method_id']);
-            }
-        }
-        $selected_method = trim((string) $selected_method);
+        $selected_method = $this->extractSelectedPaymentMethod($options);
         if ($selected_method !== '' && in_array($selected_method, $pm_ids, true)) {
             $pm_ids = [$selected_method];
         }
@@ -401,6 +398,28 @@ class Payssion extends NonmerchantGateway
             'parent_transaction_id' => null,
             'invoices' => $this->ifSet($get['invoices'], [])
         ];
+    }
+
+
+    /**
+     * Attempts to extract the selected payment method from Blesta options payload.
+     */
+    private function extractSelectedPaymentMethod($options)
+    {
+        if (!is_array($options)) {
+            return '';
+        }
+
+        $candidate = $this->ifSet($options['payment_method']);
+        if (is_array($candidate)) {
+            $candidate = $this->ifSet($candidate['value']);
+        }
+
+        if ($candidate === null || $candidate === '') {
+            $candidate = $this->ifSet($options['payment_method_id']);
+        }
+
+        return trim((string) $candidate);
     }
 
     /**
